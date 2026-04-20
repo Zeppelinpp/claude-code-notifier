@@ -63,12 +63,13 @@ Done — Stop hook 立即生效。无需手动编写脚本或修改设置。
 
 ### 配置 Bark（可选）
 
-如需启用 iPhone 推送，配置你的 Bark 密钥：
+如需启用 iPhone 推送，在 Claude Code 中运行内置的配置 skill：
 
-```bash
-cd claude-code-notifier
-./install.sh --bark-only
 ```
+/bark-setup
+```
+
+Claude 会询问你的 Bark 设备密钥并自动保存，无需手动编辑文件。
 
 或设置环境变量：
 
@@ -78,7 +79,7 @@ export BARK_KEY="你的-bark-密钥"
 
 1. 在 iPhone 上安装 [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865)
 2. 打开应用，复制你的设备密钥
-3. 运行 `./install.sh --bark-only` 并粘贴密钥
+3. 在 Claude Code 中运行 `/bark-setup` 并粘贴密钥
 
 更多 Bark 高级用法，请访问 [Bark GitHub 仓库](https://github.com/Finb/Bark)。
 
@@ -114,6 +115,9 @@ claude-code-notifier/
 │   └── marketplace.json     # 市场清单
 ├── hooks/
 │   └── hooks.json           # Claude Code Stop hook
+├── skills/
+│   └── bark-setup/
+│       └── SKILL.md         # 交互式 Bark 配置 skill
 ├── scripts/
 │   ├── notify.sh            # 插件通知脚本
 │   └── setup-bark.sh        # Bark 密钥配置

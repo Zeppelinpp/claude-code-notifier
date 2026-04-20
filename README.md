@@ -63,12 +63,13 @@ That's it — the Stop hook is active immediately. No manual script or settings 
 
 ### Configure Bark (Optional)
 
-To enable iPhone push notifications, configure your Bark key:
+To enable iPhone push notifications, run the built-in setup skill inside Claude Code:
 
-```bash
-cd claude-code-notifier
-./install.sh --bark-only
 ```
+/bark-setup
+```
+
+Claude will ask for your Bark device key and save it automatically. No manual file editing needed.
 
 Or set the environment variable:
 
@@ -78,7 +79,7 @@ export BARK_KEY="your-bark-key-here"
 
 1. Install [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) on your iPhone
 2. Open the app and copy your device key
-3. Run `./install.sh --bark-only` and paste your key
+3. Run `/bark-setup` in Claude Code and paste your key
 
 For more Bark features, visit the [Bark GitHub repository](https://github.com/Finb/Bark).
 
@@ -114,6 +115,9 @@ claude-code-notifier/
 │   └── marketplace.json     # Marketplace manifest
 ├── hooks/
 │   └── hooks.json           # Claude Code Stop hook
+├── skills/
+│   └── bark-setup/
+│       └── SKILL.md         # Interactive Bark configuration skill
 ├── scripts/
 │   ├── notify.sh            # Plugin notification script
 │   └── setup-bark.sh        # Bark key configuration
