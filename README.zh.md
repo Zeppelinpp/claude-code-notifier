@@ -1,0 +1,139 @@
+# Claude Code Notifier
+
+> 为 Claude Code 打造的精美 macOS 弹窗 & iPhone 推送通知工具。AI 完成思考时，不再错过。
+
+[![macOS](https://img.shields.io/badge/macOS-11.0%2B-blue)](https://www.apple.com/macos/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+当 Claude Code 停止响应时——无论是任务完成、等待输入还是会话结束——这款通知器会在你当前活跃显示器上弹出一个精致的 macOS 原生面板。搭配 [Bark](https://github.com/Finb/Bark) 使用，同一时刻你的 iPhone 也会收到推送。
+
+---
+
+## ✨ 功能亮点
+
+- **原生 macOS 弹窗** — 毛玻璃质感面板，连续圆角，自动适配深色/浅色模式，附带系统 Glass 提示音
+- **多显示器感知** — 弹窗始终出现在你鼠标当前所在的屏幕
+- **一键回切** — 点击通知即可跳回 Terminal / Tmux 窗口
+- **悬停关闭** — 优雅的关闭按钮在鼠标悬停时淡入显示
+- **iPhone 同步** — 通过 [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) 经 APNs 实时推送至手机
+- **Claude 品牌标识** — 使用 Claude Code 官方吉祥物图标，而非通用桌面图标
+
+---
+
+## 📸 效果预览
+
+```
+┌─────────────────────────────┐
+│  [🟠]  Claude Code           │
+│         Wait for Input        │
+│         ~/projects/my-app     │
+└─────────────────────────────┘
+```
+
+*与你的 macOS 主题一致的毛玻璃面板，在活跃桌面丝滑弹出。*
+
+---
+
+## 🚀 快速开始
+
+### 1. 下载安装
+
+```bash
+# 克隆本仓库
+git clone https://github.com/Zeppelinpp/claude-code-notifier.git
+
+# 将通知器应用复制到你的 Applications 目录
+cp -R claude-code-notifier/ClaudeCodeNotifier.app ~/Applications/
+```
+
+### 2. 配置 Claude Code Hook
+
+创建一个通知脚本（敏感密钥保存在这里，**不要**写入 `settings.json`）：
+
+```bash
+# ~/.claude/notify.sh
+#!/bin/bash
+read -r input
+cwd=$(echo "$PWD" | sed "s|^$HOME|~|")
+
+# macOS 本地弹窗
+~/Applications/ClaudeCodeNotifier.app/Contents/MacOS/ClaudeCodeNotifier \
+    "Claude Code" "$cwd" "Wait for Input" &
+
+# Bark 推送至 iPhone（可选）
+BARK_KEY="你的-bark-密钥"
+ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
+
+python3 -c "
+import urllib.parse
+t='$BARK_KEY'
+path='/'+urllib.parse.quote(t)+'/'+urllib.parse.quote('Claude Code')+'/'+urllib.parse.quote('Wait for Input')+'?'+urllib.parse.urlencode({
+    'subtitle': '$cwd',
+    'icon': '$ICON_URL'
+})
+print('https://api.day.app'+path)
+" | { read -r url; curl -fsS \"\$url\" > /dev/null 2>&1; }
+```
+
+赋予执行权限：
+```bash
+chmod +x ~/.claude/notify.sh
+```
+
+将 Hook 添加到你的 Claude Code 配置（`~/.claude/settings.json`）：
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/notify.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 3. 通过 Bark 推送至 iPhone（可选）
+
+1. 在 iPhone 上安装 [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865)
+2. 打开应用，复制你的设备密钥
+3. 将 `~/.claude/notify.sh` 中的 `你的-bark-密钥` 替换为实际密钥
+
+更多 Bark 高级用法，请访问 [Bark GitHub 仓库](https://github.com/Finb/Bark)。
+
+### 4. 激活配置
+
+在 Claude Code 中执行 `/hooks` 重新加载配置，或直接重启 Claude Code。
+
+---
+
+## 📁 仓库结构
+
+```
+claude-code-notifier/
+├── assets/
+│   └── claudecode-color.png    # Claude Code 吉祥物图标
+├── ClaudeCodeNotifier.app/     # 已编译的 macOS 通知器应用
+├── README.md
+└── README.zh.md
+```
+
+---
+
+## 🙏 致谢
+
+- [Bark](https://github.com/Finb/Bark) — Finb 开发的开源 iOS 推送通知工具
+- Claude Code — Anthropic 推出的 AI 编程助手
+
+---
+
+## License
+
+MIT
