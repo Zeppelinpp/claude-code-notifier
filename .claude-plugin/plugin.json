@@ -1,0 +1,13 @@
+{
+  "name": "claude-code-notifier",
+  "version": "1.0.0",
+  "description": "Beautiful macOS popup + iPhone push notifications when Claude Code stops",
+  "author": {
+    "name": "Zeppelinpp",
+    "url": "https://github.com/Zeppelinpp"
+  },
+  "homepage": "https://github.com/Zeppelinpp/claude-code-notifier",
+  "repository": "https://github.com/Zeppelinpp/claude-code-notifier",
+  "license": "MIT",
+  "keywords": ["notifications", "macos", "bark", "iphone", "desktop"]
+}

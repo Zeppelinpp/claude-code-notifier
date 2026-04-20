@@ -36,19 +36,57 @@ When Claude Code stops responding — task complete, waiting for input, or sessi
 
 ## 🚀 Quick Start
 
-### 1. Download & Install
+### Recommended: Plugin Install
 
-```bash
-# Clone this repository
-git clone https://github.com/Zeppelinpp/claude-code-notifier.git
+Register this repository as a marketplace in your Claude Code settings (`~/.claude/settings.json`):
 
-# Move the notifier app to your Applications folder
-cp -R claude-code-notifier/ClaudeCodeNotifier.app ~/Applications/
+```json
+{
+  "extraKnownMarketplaces": {
+    "zeppelinpp": {
+      "source": {
+        "source": "github",
+        "repo": "Zeppelinpp/claude-code-notifier"
+      }
+    }
+  }
+}
 ```
 
-### 2. Configure Claude Code Hook
+Then install the plugin inside Claude Code:
 
-Run the installer, or follow the manual steps below:
+```
+/plugin install claude-code-notifier@zeppelinpp
+```
+
+That's it — the Stop hook is active immediately. No manual script or settings editing required.
+
+### Configure Bark (Optional)
+
+To enable iPhone push notifications, configure your Bark key:
+
+```bash
+cd claude-code-notifier
+./install.sh --bark-only
+```
+
+Or set the environment variable:
+
+```bash
+export BARK_KEY="your-bark-key-here"
+```
+
+1. Install [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) on your iPhone
+2. Open the app and copy your device key
+3. Run `./install.sh --bark-only` and paste your key
+
+For more Bark features, visit the [Bark GitHub repository](https://github.com/Finb/Bark).
+
+---
+
+## 🔧 Manual Install (Legacy)
+
+If you prefer not to use the plugin system, use the standalone installer:
 
 ```bash
 cd claude-code-notifier
@@ -56,73 +94,14 @@ cd claude-code-notifier
 ./install.sh --force  # non-interactive: auto-overwrite for updates
 ```
 
-The installer will copy the app, create `~/.claude/tools/notify.sh`, and add the hook to your settings. To set up manually, read on.
+This copies the app to `~/Applications/`, creates `~/.claude/tools/notify.sh`, and adds a hook to `settings.json`.
 
-### Manual Setup
-
-Create a notification script (keep your private keys here, **not** in `settings.json`):
+To migrate from legacy hook to plugin mode:
 
 ```bash
-# ~/.claude/tools/notify.sh
-#!/bin/bash
-read -r input
-cwd=$(echo "$PWD" | sed "s|^$HOME|~|")
-
-# macOS popup
-~/Applications/ClaudeCodeNotifier.app/Contents/MacOS/ClaudeCodeNotifier \
-    "Claude Code" "$cwd" "Wait for Input" &
-
-# Bark push to iPhone (optional)
-BARK_KEY="your-bark-key-here"
-ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
-
-python3 -c "
-import urllib.parse
-t='$BARK_KEY'
-path='/'+urllib.parse.quote(t)+'/'+urllib.parse.quote('Claude Code')+'/'+urllib.parse.quote('Wait for Input')+'?'+urllib.parse.urlencode({
-    'subtitle': '$cwd',
-    'icon': '$ICON_URL'
-})
-print('https://api.day.app'+path)
-" | { read -r url; curl -fsS \"\$url\" > /dev/null 2>&1; }
+./install.sh --uninstall   # removes legacy settings.json hook
+# then use /plugin install inside Claude Code
 ```
-
-Make it executable:
-```bash
-chmod +x ~/.claude/tools/notify.sh
-```
-
-Add the hook to your Claude Code settings (`~/.claude/settings.json`):
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/notify.sh",
-            "async": true
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-### 3. iPhone Push via Bark (Optional)
-
-1. Install [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) on your iPhone
-2. Open the app and copy your device key
-3. Replace `your-bark-key-here` in `~/.claude/tools/notify.sh`
-
-For more Bark features, visit the [Bark GitHub repository](https://github.com/Finb/Bark).
-
-### 4. Activate
-
-In Claude Code, run `/hooks` once to reload configuration, or restart Claude Code.
 
 ---
 
@@ -130,10 +109,18 @@ In Claude Code, run `/hooks` once to reload configuration, or restart Claude Cod
 
 ```
 claude-code-notifier/
+├── .claude-plugin/
+│   ├── plugin.json          # Plugin manifest
+│   └── marketplace.json     # Marketplace manifest
+├── hooks/
+│   └── hooks.json           # Claude Code Stop hook
+├── scripts/
+│   ├── notify.sh            # Plugin notification script
+│   └── setup-bark.sh        # Bark key configuration
+├── ClaudeCodeNotifier.app/  # Compiled macOS notifier app
 ├── assets/
-│   └── claudecode-color.png    # Claude Code mascot icon
-├── ClaudeCodeNotifier.app/     # Compiled macOS notifier app
-├── install.sh                  # One-command installer
+│   └── claudecode-color.png # Claude Code mascot icon
+├── install.sh               # Standalone installer (legacy)
 ├── README.md
 └── README.zh.md
 ```
