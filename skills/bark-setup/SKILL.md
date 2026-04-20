@@ -1,7 +1,6 @@
 ---
 name: bark-setup
 description: Configure Bark push notification key for Claude Code Notifier
-type: user-invocable
 ---
 
 # Bark Setup
