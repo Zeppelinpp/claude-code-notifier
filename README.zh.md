@@ -48,10 +48,21 @@ cp -R claude-code-notifier/ClaudeCodeNotifier.app ~/Applications/
 
 ### 2. 配置 Claude Code Hook
 
+直接运行安装脚本，或按以下步骤手动配置：
+
+```bash
+cd claude-code-notifier
+./install.sh
+```
+
+安装器会自动复制应用、创建 `~/.claude/tools/notify.sh` 并添加 Hook。如需手动配置，请继续阅读。
+
+### 手动配置
+
 创建一个通知脚本（敏感密钥保存在这里，**不要**写入 `settings.json`）：
 
 ```bash
-# ~/.claude/notify.sh
+# ~/.claude/tools/notify.sh
 #!/bin/bash
 read -r input
 cwd=$(echo "$PWD" | sed "s|^$HOME|~|")
@@ -77,7 +88,7 @@ print('https://api.day.app'+path)
 
 赋予执行权限：
 ```bash
-chmod +x ~/.claude/notify.sh
+chmod +x ~/.claude/tools/notify.sh
 ```
 
 将 Hook 添加到你的 Claude Code 配置（`~/.claude/settings.json`）：
@@ -104,7 +115,7 @@ chmod +x ~/.claude/notify.sh
 
 1. 在 iPhone 上安装 [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865)
 2. 打开应用，复制你的设备密钥
-3. 将 `~/.claude/notify.sh` 中的 `你的-bark-密钥` 替换为实际密钥
+3. 将 `~/.claude/tools/notify.sh` 中的 `你的-bark-密钥` 替换为实际密钥
 
 更多 Bark 高级用法，请访问 [Bark GitHub 仓库](https://github.com/Finb/Bark)。
 
@@ -121,6 +132,7 @@ claude-code-notifier/
 ├── assets/
 │   └── claudecode-color.png    # Claude Code 吉祥物图标
 ├── ClaudeCodeNotifier.app/     # 已编译的 macOS 通知器应用
+├── install.sh                  # 一键安装脚本
 ├── README.md
 └── README.zh.md
 ```

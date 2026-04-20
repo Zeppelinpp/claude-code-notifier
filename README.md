@@ -48,10 +48,21 @@ cp -R claude-code-notifier/ClaudeCodeNotifier.app ~/Applications/
 
 ### 2. Configure Claude Code Hook
 
+Run the installer, or follow the manual steps below:
+
+```bash
+cd claude-code-notifier
+./install.sh
+```
+
+The installer will copy the app, create `~/.claude/tools/notify.sh`, and add the hook to your settings. To set up manually, read on.
+
+### Manual Setup
+
 Create a notification script (keep your private keys here, **not** in `settings.json`):
 
 ```bash
-# ~/.claude/notify.sh
+# ~/.claude/tools/notify.sh
 #!/bin/bash
 read -r input
 cwd=$(echo "$PWD" | sed "s|^$HOME|~|")
@@ -77,7 +88,7 @@ print('https://api.day.app'+path)
 
 Make it executable:
 ```bash
-chmod +x ~/.claude/notify.sh
+chmod +x ~/.claude/tools/notify.sh
 ```
 
 Add the hook to your Claude Code settings (`~/.claude/settings.json`):
@@ -104,7 +115,7 @@ Add the hook to your Claude Code settings (`~/.claude/settings.json`):
 
 1. Install [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) on your iPhone
 2. Open the app and copy your device key
-3. Replace `your-bark-key-here` in `~/.claude/notify.sh`
+3. Replace `your-bark-key-here` in `~/.claude/tools/notify.sh`
 
 For more Bark features, visit the [Bark GitHub repository](https://github.com/Finb/Bark).
 
@@ -121,6 +132,7 @@ claude-code-notifier/
 ├── assets/
 │   └── claudecode-color.png    # Claude Code mascot icon
 ├── ClaudeCodeNotifier.app/     # Compiled macOS notifier app
+├── install.sh                  # One-command installer
 ├── README.md
 └── README.zh.md
 ```
