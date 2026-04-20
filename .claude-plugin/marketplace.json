@@ -1,5 +1,5 @@
 {
-  "name": "Zeppelinpp Plugins",
+  "name": "zeppelinpp",
   "plugins": [
     {
       "name": "claude-code-notifier",
