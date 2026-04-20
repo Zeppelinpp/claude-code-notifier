@@ -122,12 +122,39 @@ claude-code-notifier/
 │   ├── notify.sh            # Plugin notification script
 │   └── setup-bark.sh        # Bark key configuration
 ├── ClaudeCodeNotifier.app/  # Compiled macOS notifier app
+├── src/
+│   └── popup.swift          # Swift source (customizable)
 ├── assets/
 │   └── claudecode-color.png # Claude Code mascot icon
 ├── install.sh               # Standalone installer (legacy)
 ├── README.md
 └── README.zh.md
 ```
+
+---
+
+## 🔨 Build from Source
+
+The precompiled `ClaudeCodeNotifier.app` works out of the box, but you can customize the popup and rebuild:
+
+```bash
+cd src
+swiftc popup.swift -o ClaudeCodeNotifier
+```
+
+Then replace the binary in the app bundle:
+
+```bash
+cp ClaudeCodeNotifier ../ClaudeCodeNotifier.app/Contents/MacOS/
+```
+
+Requires macOS 11.0+ and Swift toolchain. Key things you might customize in `popup.swift`:
+
+- Window size, corner radius, padding
+- Icon size or image source
+- Auto-dismiss timeout (currently 8 seconds)
+- Sound effect (currently "Glass")
+- Click behavior (currently focuses frontmost app)
 
 ---
 

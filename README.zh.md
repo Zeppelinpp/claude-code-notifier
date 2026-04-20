@@ -122,12 +122,39 @@ claude-code-notifier/
 │   ├── notify.sh            # 插件通知脚本
 │   └── setup-bark.sh        # Bark 密钥配置
 ├── ClaudeCodeNotifier.app/  # 已编译的 macOS 通知器应用
+├── src/
+│   └── popup.swift          # Swift 源码（可自定义）
 ├── assets/
 │   └── claudecode-color.png # Claude Code 吉祥物图标
 ├── install.sh               # 独立安装器（legacy）
 ├── README.md
 └── README.zh.md
 ```
+
+---
+
+## 🔨 从源码构建
+
+预编译的 `ClaudeCodeNotifier.app` 开箱即用，但你可以自定义弹窗样式后重新编译：
+
+```bash
+cd src
+swiftc popup.swift -o ClaudeCodeNotifier
+```
+
+然后替换应用包中的二进制文件：
+
+```bash
+cp ClaudeCodeNotifier ../ClaudeCodeNotifier.app/Contents/MacOS/
+```
+
+需要 macOS 11.0+ 及 Swift 工具链。`popup.swift` 中可自定义的关键项：
+
+- 窗口大小、圆角半径、边距
+- 图标大小或图片来源
+- 自动消失时间（当前 8 秒）
+- 提示音效（当前 "Glass"）
+- 点击行为（当前聚焦至最前应用）
 
 ---
 
