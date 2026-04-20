@@ -52,7 +52,8 @@ Run the installer, or follow the manual steps below:
 
 ```bash
 cd claude-code-notifier
-./install.sh
+./install.sh          # interactive: asks before overwriting
+./install.sh --force  # non-interactive: auto-overwrite for updates
 ```
 
 The installer will copy the app, create `~/.claude/tools/notify.sh`, and add the hook to your settings. To set up manually, read on.

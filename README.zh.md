@@ -52,7 +52,8 @@ cp -R claude-code-notifier/ClaudeCodeNotifier.app ~/Applications/
 
 ```bash
 cd claude-code-notifier
-./install.sh
+./install.sh          # 交互式：覆盖前询问
+./install.sh --force  # 非交互式：自动覆盖，适合更新
 ```
 
 安装器会自动复制应用、创建 `~/.claude/tools/notify.sh` 并添加 Hook。如需手动配置，请继续阅读。

@@ -10,6 +10,11 @@ NOTIFY_SCRIPT="$NOTIFY_DIR/notify.sh"
 SETTINGS="$HOME/.claude/settings.json"
 ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
 
+FORCE=false
+if [ "$1" = "--force" ] || [ "$1" = "-f" ]; then
+    FORCE=true
+fi
+
 echo "======================================"
 echo "  Claude Code Notifier Installer"
 echo "======================================"
@@ -30,7 +35,9 @@ echo "Done."
 mkdir -p "$NOTIFY_DIR"
 
 CREATE_NOTIFY=false
-if [ -f "$NOTIFY_SCRIPT" ]; then
+if [ "$FORCE" = true ]; then
+    CREATE_NOTIFY=true
+elif [ -f "$NOTIFY_SCRIPT" ]; then
     echo ""
     echo "Found existing notify.sh at $NOTIFY_SCRIPT"
     read -r -p "Overwrite? [y/N] " ans
@@ -51,10 +58,14 @@ if [ "$CREATE_NOTIFY" = true ]; then
     fi
 
     if [ -z "$BARK_KEY" ] || [ "$BARK_KEY" = "your-bark-key-here" ]; then
-        echo ""
-        echo "Bark push to iPhone (optional)."
-        echo "  Get your device key from the Bark iOS app."
-        read -r -p "Enter Bark key (press Enter to skip): " BARK_KEY
+        if [ "$FORCE" = true ]; then
+            BARK_KEY="your-bark-key-here"
+        else
+            echo ""
+            echo "Bark push to iPhone (optional)."
+            echo "  Get your device key from the Bark iOS app."
+            read -r -p "Enter Bark key (press Enter to skip): " BARK_KEY
+        fi
     else
         echo "Reusing existing Bark key from current notify.sh."
     fi
@@ -104,10 +115,14 @@ if [ ! -f "$SETTINGS" ]; then
 fi
 
 python3 -c "
-import json, sys
+import json, sys, os
 
 settings_path = '$SETTINGS'
 cmd = '$NOTIFY_SCRIPT'
+
+# Normalize paths for comparison: expand ~ and resolve
+home = os.path.expanduser('~')
+cmd_norm = os.path.normpath(os.path.expanduser(cmd))
 
 try:
     with open(settings_path, 'r') as f:
@@ -117,9 +132,12 @@ except json.JSONDecodeError:
 
 stop_hooks = data.setdefault('hooks', {}).setdefault('Stop', [])
 
+def normalize_cmd(c):
+    return os.path.normpath(os.path.expanduser(c))
+
 exists = any(
     any(
-        h.get('type') == 'command' and h.get('command') == cmd
+        h.get('type') == 'command' and normalize_cmd(h.get('command', '')) == cmd_norm
         for h in entry.get('hooks', [])
     )
     for entry in stop_hooks
@@ -128,13 +146,26 @@ exists = any(
 if exists:
     print('Stop hook already configured.')
 else:
-    stop_hooks.append({
+    # Also remove any duplicates with absolute path
+    clean_hooks = []
+    for entry in stop_hooks:
+        entry_hooks = entry.get('hooks', [])
+        new_hooks = [
+            h for h in entry_hooks
+            if not (h.get('type') == 'command' and normalize_cmd(h.get('command', '')) == cmd_norm)
+        ]
+        if new_hooks:
+            clean_hooks.append({'hooks': new_hooks})
+
+    clean_hooks.append({
         'hooks': [{
             'type': 'command',
             'command': cmd,
             'async': True
         }]
     })
+    data['hooks']['Stop'] = clean_hooks
+
     with open(settings_path, 'w') as f:
         json.dump(data, f, indent=2)
         f.write('\n')
