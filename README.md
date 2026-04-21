@@ -13,7 +13,7 @@ When Claude Code stops responding — task complete, waiting for input, or sessi
 
 - **Native macOS Popup** — Frosted glass panel with continuous rounded corners, auto dark/light mode, and system Glass sound
 - **Multi-Monitor Aware** — Appears on whichever screen your cursor is currently on
-- **Click to Focus** — Click the notification to jump straight back to your Terminal / Tmux window
+- **Click to Focus** — Click the notification to jump straight back to the terminal app you were using (Ghostty, iTerm2, Terminal.app, etc.)
 - **Hover to Dismiss** — Elegant close button fades in on hover
 - **iPhone Sync** — Push to iPhone via [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) using APNs
 - **Claude Branding** — Official Claude Code mascot icon, not the generic desktop app icon
@@ -154,7 +154,7 @@ Requires macOS 11.0+ and Swift toolchain. Key things you might customize in `pop
 - Icon size or image source
 - Auto-dismiss timeout (currently 8 seconds)
 - Sound effect (currently "Glass")
-- Click behavior (currently focuses frontmost app)
+- Click behavior (focuses the originating terminal app, falls back to frontmost app)
 
 ---
 

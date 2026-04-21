@@ -36,7 +36,7 @@ class ActionHandler: NSObject {
     }
 }
 
-func showNotification(title: String, subtitle: String, informativeText: String) {
+func showNotification(title: String, subtitle: String, informativeText: String, terminalBundleID: String) {
     // Play Glass sound
     if let sound = NSSound(named: "Glass") {
         sound.play()
@@ -182,10 +182,21 @@ func showNotification(title: String, subtitle: String, informativeText: String) 
     let y = screenFrame.maxY - windowHeight - 20
     window.setFrameOrigin(NSPoint(x: x, y: y))
 
-    // Click to focus frontmost app
+    // Click to focus the terminal app that originated the notification
     let clickHandler = ActionHandler {
-        if let app = NSWorkspace.shared.frontmostApplication {
-            app.activate()
+        if !terminalBundleID.isEmpty,
+           let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == terminalBundleID }) {
+            if #available(macOS 14.0, *) {
+                app.activate()
+            } else {
+                app.activate(options: .activateIgnoringOtherApps)
+            }
+        } else if let app = NSWorkspace.shared.frontmostApplication {
+            if #available(macOS 14.0, *) {
+                app.activate()
+            } else {
+                app.activate(options: .activateIgnoringOtherApps)
+            }
         }
         window.close()
         NSApp.terminate(nil)
@@ -214,7 +225,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let title = args.count > 1 ? args[1] : "Claude Code"
         let subtitle = args.count > 2 ? args[2] : ""
         let body = args.count > 3 ? args[3] : "Wait for Input"
-        showNotification(title: title, subtitle: subtitle, informativeText: body)
+        let bundleID = args.count > 4 ? args[4] : ""
+        showNotification(title: title, subtitle: subtitle, informativeText: body, terminalBundleID: bundleID)
     }
 }
 
