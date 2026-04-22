@@ -8,14 +8,22 @@ input=$(cat)
 
 # Extract the last assistant message from the transcript
 message="Wait for Input"
-transcript_path=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('transcript_path',''))" 2>/dev/null)
 
-if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+# Try 1: Use last_assistant_message from hook JSON directly (if provided)
+hook_message=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('last_assistant_message',''))" 2>/dev/null)
+if [ -n "$hook_message" ] && [ "$hook_message" != "None" ]; then
+  message="$hook_message"
+else
+  # Try 2: Parse transcript file
+  transcript_path=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('transcript_path',''))" 2>/dev/null)
+
+  if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
     extracted=$(python3 -c "
 import json, sys, os
 path = os.path.expanduser('$transcript_path')
 try:
     last_text = None
+    last_thinking = None
     with open(path, 'r', encoding='utf-8', errors='ignore') as f:
         for line in f:
             line = line.strip()
@@ -38,68 +46,108 @@ try:
                     text = item.get('text', '').strip()
                     if text:
                         last_text = text
-    if last_text:
+                elif item.get('type') == 'thinking':
+                    thinking = item.get('thinking', '').strip()
+                    if thinking:
+                        last_thinking = thinking
+    # Prefer text over thinking
+    result = last_text if last_text else last_thinking
+    if result:
         # Collapse whitespace to a single line
-        last_text = ' '.join(last_text.split())
+        result = ' '.join(result.split())
         # Limit to ~100 chars
-        if len(last_text) > 100:
-            last_text = last_text[:97] + '...'
-        print(last_text)
+        if len(result) > 100:
+            result = result[:97] + '...'
+        print(result)
 except Exception:
     pass
 " 2>/dev/null)
     if [ -n "$extracted" ]; then
-        message="$extracted"
+      message="$extracted"
     fi
+  fi
 fi
 
 # Detect the terminal emulator that is running this shell.
 find_terminal_bundle_id() {
-    # Method 1: walk up the parent process chain
-    local pid=$$
-    while [ -n "$pid" ] && [ "$pid" -gt 1 ] 2>/dev/null; do
-        local cmd
-        cmd=$(ps -p "$pid" -o comm= 2>/dev/null | sed 's/^-//' | xargs basename 2>/dev/null)
-        case "$cmd" in
-            Ghostty|ghostty) echo "com.mitchellh.ghostty"; return ;;
-            iTerm2|iTerm|iTermServer*|iTermServer) echo "com.googlecode.iterm2"; return ;;
-            Terminal) echo "com.apple.Terminal"; return ;;
-            WezTerm|wezterm-gui) echo "com.github.wez.wezterm"; return ;;
-            kitty) echo "net.kovidgoyal.kitty"; return ;;
-            Alacritty|alacritty) echo "org.alacritty.Alacritty"; return ;;
-            Hyper) echo "co.zeit.hyper"; return ;;
-            Tabby) echo "com.eugeny.tabby"; return ;;
-            Warp|warp) echo "dev.warp.Warp-Stable"; return ;;
-            Code|Electron)
-                local full_cmd
-                full_cmd=$(ps -p "$pid" -o args= 2>/dev/null)
-                case "$full_cmd" in
-                    *Cursor*) echo "com.todesktop.230313mzl4w4u92"; return ;;
-                    *"Visual Studio Code"*) echo "com.microsoft.VSCode"; return ;;
-                esac
-                ;;
-        esac
-        pid=$(ps -p "$pid" -o ppid= 2>/dev/null | tr -d ' ')
-    done
-
-    # Method 2: terminal-specific environment variables
-    [ -n "${GHOSTTY_RESOURCES_DIR:-}" ] && echo "com.mitchellh.ghostty" && return
-    [ -n "${ITERM_SESSION_ID:-}" ]     && echo "com.googlecode.iterm2" && return
-    [ -n "${WARP_SESSION_ID:-}" ]      && echo "dev.warp.Warp-Stable" && return
-    [ -n "${KITTY_WINDOW_ID:-}" ]      && echo "net.kovidgoyal.kitty" && return
-    [ -n "${WEZTERM_PANE:-}" ]         && echo "com.github.wez.wezterm" && return
-
-    # Method 3: generic TERM_PROGRAM
-    [ -n "${TERM_PROGRAM:-}" ] && {
-        case "$TERM_PROGRAM" in
-            Apple_Terminal) echo "com.apple.Terminal" ;;
-            iTerm.app)      echo "com.googlecode.iterm2" ;;
-            vscode)         echo "com.microsoft.VSCode" ;;
-        esac
+  # Method 1: walk up the parent process chain
+  local pid=$$
+  while [ -n "$pid" ] && [ "$pid" -gt 1 ] 2>/dev/null; do
+    local cmd
+    cmd=$(ps -p "$pid" -o comm= 2>/dev/null | sed 's/^-//' | xargs basename 2>/dev/null)
+    case "$cmd" in
+    Ghostty | ghostty)
+      echo "com.mitchellh.ghostty"
+      return
+      ;;
+    iTerm2 | iTerm | iTermServer* | iTermServer)
+      echo "com.googlecode.iterm2"
+      return
+      ;;
+    Terminal)
+      echo "com.apple.Terminal"
+      return
+      ;;
+    WezTerm | wezterm-gui)
+      echo "com.github.wez.wezterm"
+      return
+      ;;
+    kitty)
+      echo "net.kovidgoyal.kitty"
+      return
+      ;;
+    Alacritty | alacritty)
+      echo "org.alacritty.Alacritty"
+      return
+      ;;
+    Hyper)
+      echo "co.zeit.hyper"
+      return
+      ;;
+    Tabby)
+      echo "com.eugeny.tabby"
+      return
+      ;;
+    Warp | warp)
+      echo "dev.warp.Warp-Stable"
+      return
+      ;;
+    Code | Electron)
+      local full_cmd
+      full_cmd=$(ps -p "$pid" -o args= 2>/dev/null)
+      case "$full_cmd" in
+      *Cursor*)
+        echo "com.todesktop.230313mzl4w4u92"
         return
-    }
+        ;;
+      *"Visual Studio Code"*)
+        echo "com.microsoft.VSCode"
+        return
+        ;;
+      esac
+      ;;
+    esac
+    pid=$(ps -p "$pid" -o ppid= 2>/dev/null | tr -d ' ')
+  done
 
-    echo ""
+  # Method 2: terminal-specific environment variables
+  [ -n "${GHOSTTY_RESOURCES_DIR:-}" ] && echo "com.mitchellh.ghostty" && return
+  [ -n "${ITERM_SESSION_ID:-}" ] && echo "com.googlecode.iterm2" && return
+  [ -n "${WARP_SESSION_ID:-}" ] && echo "dev.warp.Warp-Stable" && return
+  [ -n "${KITTY_WINDOW_ID:-}" ] && echo "net.kovidgoyal.kitty" && return
+  [ -n "${WEZTERM_PANE:-}" ] && echo "com.github.wez.wezterm" && return
+
+  # Method 3: generic TERM_PROGRAM
+  [ -n "${TERM_PROGRAM:-}" ] && {
+    case "$TERM_PROGRAM" in
+    Apple_Terminal) echo "com.apple.Terminal" ;;
+    iTerm.app) echo "com.googlecode.iterm2" ;;
+    vscode) echo "com.microsoft.VSCode" ;;
+    esac
+    return
+  }
+
+  echo ""
 }
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}"
@@ -117,19 +165,23 @@ BARK_CONFIG_FILE="$BARK_CONFIG_DIR/bark-key"
 BARK_KEY="${BARK_KEY:-}"
 
 if [ -z "$BARK_KEY" ] && [ -f "$BARK_CONFIG_FILE" ]; then
-    BARK_KEY=$(cat "$BARK_CONFIG_FILE" | tr -d '\n')
+  BARK_KEY=$(cat "$BARK_CONFIG_FILE" | tr -d '\n')
 fi
 
 if [ -n "$BARK_KEY" ] && [ "$BARK_KEY" != "your-bark-key-here" ]; then
-    ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
-    env _CCN_MSG="$message" python3 -c "
+  ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
+  env _CCN_MSG="$message" python3 -c "
 import urllib.parse, os
 msg = os.environ.get('_CCN_MSG', 'Wait for Input')
 t='${BARK_KEY}'
 path='/'+urllib.parse.quote(t)+'/'+urllib.parse.quote('Claude Code')+'/'+urllib.parse.quote(msg)+'?'+urllib.parse.urlencode({
     'subtitle': '${cwd}',
-    'icon': '${ICON_URL}'
+    'icon': '${ICON_URL}',
+    'markdown': msg
 })
 print('https://api.day.app'+path)
-" | { read -r url; curl -fsS "$url" > /dev/null 2>&1; }
+" | {
+    read -r url
+    curl -fsS "$url" >/dev/null 2>&1
+  }
 fi
