@@ -73,7 +73,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     // Layout constants — expanded for markdown
     let padTop: CGFloat = 14
     let padBottom: CGFloat = 14
-    let padH: CGFloat = 16
+    let padH: CGFloat = 10
     let padIconText: CGFloat = 12
     let closeSize: CGFloat = 16
     let closePad: CGFloat = 8
