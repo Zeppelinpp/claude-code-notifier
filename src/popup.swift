@@ -31,10 +31,6 @@ class NotificationWindow: NSWindow {
     override var canBecomeMain: Bool { true }
 }
 
-class TopAlignedTextView: NSTextView {
-    override var isFlipped: Bool { true }
-}
-
 class ActionHandler: NSObject {
     let action: () -> Void
     init(action: @escaping () -> Void) {
@@ -74,45 +70,47 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let screenFrame = screen.visibleFrame
     let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
 
-    // Layout constants — compact
-    let padTop: CGFloat = 8
-    let padBottom: CGFloat = 8
-    let padH: CGFloat = 12
-    let padIconText: CGFloat = 10
-    let closeSize: CGFloat = 14
-    let closePad: CGFloat = 6
+    // Layout constants — expanded for markdown
+    let padTop: CGFloat = 14
+    let padBottom: CGFloat = 14
+    let padH: CGFloat = 16
+    let padIconText: CGFloat = 12
+    let closeSize: CGFloat = 16
+    let closePad: CGFloat = 8
 
-    let textWidth: CGFloat = 240
-    let titleHeight: CGFloat = 15
-    let gapTitleSubtitle: CGFloat = 2
-    let gapSubtitleBody: CGFloat = 2
-    let minIconSize: CGFloat = 36
-    let maxIconSize: CGFloat = 44
-    let bodyInsetY: CGFloat = 2
+    let textWidth: CGFloat = 300
+    let titleHeight: CGFloat = 18
+    let gapTitleSubtitle: CGFloat = 4
+    let gapSubtitleBody: CGFloat = 6
+    let minIconSize: CGFloat = 44
+    let maxIconSize: CGFloat = 56
+    let bodyInsetY: CGFloat = 4
+    let maxBodyHeight: CGFloat = 90
 
-    // ---- Body: Markdown rendering + dynamic height ----
-    let bodyTextView = TopAlignedTextView(frame: NSRect(x: 0, y: 0, width: textWidth, height: 0))
-    bodyTextView.isEditable = false
-    bodyTextView.isSelectable = false
-    bodyTextView.drawsBackground = false
-    bodyTextView.isHorizontallyResizable = false
-    bodyTextView.isVerticallyResizable = false
-    bodyTextView.textContainerInset = NSSize(width: 0, height: bodyInsetY)
-    bodyTextView.textContainer?.widthTracksTextView = true
-    bodyTextView.textContainer?.lineFragmentPadding = 0
-    bodyTextView.textContainer?.size = NSSize(width: textWidth, height: CGFloat.greatestFiniteMagnitude)
-
-    let bodyFont = NSFont.systemFont(ofSize: 10.5)
+    let bodyFont = NSFont.systemFont(ofSize: 12)
     let bodyColor: NSColor = isDark ? NSColor(white: 0.6, alpha: 1) : NSColor(white: 0.4, alpha: 1)
     let collapsed = informativeText
         .components(separatedBy: .whitespacesAndNewlines)
         .filter { !$0.isEmpty }
         .joined(separator: " ")
-    let maxBodyChars = 50
+    let maxBodyChars = 140
     let message = collapsed.count > maxBodyChars
         ? String(collapsed.prefix(maxBodyChars)) + "..."
         : collapsed
 
+    // ---- Subtitle: code-block style path ----
+    let codePadH: CGFloat = 8
+    let codePadV: CGFloat = 3
+    let codeFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+    let codeLabel = NSTextField(labelWithString: subtitle)
+    codeLabel.font = codeFont
+    codeLabel.textColor = .nord4
+    codeLabel.sizeToFit()
+    let codeBlockWidth = min(codeLabel.frame.width + codePadH * 2, textWidth)
+    let codeBlockHeight = codeLabel.frame.height + codePadV * 2
+
+    // ---- Build body attributed string first (for dynamic height) ----
+    var bodyAttrString: NSAttributedString
     if #available(macOS 12.0, *) {
         if let data = message.data(using: .utf8),
            let attributedString = try? NSAttributedString(
@@ -121,20 +119,16 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
            ) {
             let mutable = NSMutableAttributedString(attributedString: attributedString)
             let fullRange = NSRange(location: 0, length: mutable.length)
-
-            // Default foreground color where not set by markdown parser
             mutable.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
                 if value == nil {
                     mutable.addAttribute(.foregroundColor, value: bodyColor, range: range)
                 }
             }
-            // Default font where not set (preserves bold / italic from markdown)
             mutable.enumerateAttribute(.font, in: fullRange, options: []) { value, range, _ in
                 if value == nil {
                     mutable.addAttribute(.font, value: bodyFont, range: range)
                 }
             }
-            // Tint inline code with nordic accent colour
             mutable.enumerateAttribute(.font, in: fullRange, options: []) { value, range, _ in
                 if let font = value as? NSFont {
                     let name = font.fontName.lowercased()
@@ -143,42 +137,30 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
                     }
                 }
             }
-            bodyTextView.textStorage?.setAttributedString(mutable)
+            bodyAttrString = mutable
         } else {
-            bodyTextView.string = message
-            bodyTextView.textColor = bodyColor
-            bodyTextView.font = bodyFont
+            bodyAttrString = NSAttributedString(
+                string: message,
+                attributes: [.foregroundColor: bodyColor, .font: bodyFont]
+            )
         }
     } else {
-        bodyTextView.string = message
-        bodyTextView.textColor = bodyColor
-        bodyTextView.font = bodyFont
+        bodyAttrString = NSAttributedString(
+            string: message,
+            attributes: [.foregroundColor: bodyColor, .font: bodyFont]
+        )
     }
 
-    // Measure body height
-    let layoutManager = bodyTextView.layoutManager!
-    let textContainer = bodyTextView.textContainer!
-    layoutManager.ensureLayout(for: textContainer)
-    var bodyHeight = layoutManager.usedRect(for: textContainer).height
-    let maxBodyHeight: CGFloat = 72
-    if bodyHeight > maxBodyHeight {
-        bodyHeight = maxBodyHeight
-    }
-    if bodyHeight < 16 {
-        bodyHeight = 16
-    }
-    let bodyViewHeight = ceil(bodyHeight) + bodyInsetY * 2 + 2
-
-    // ---- Subtitle: code-block style path ----
-    let codePadH: CGFloat = 6
-    let codePadV: CGFloat = 2
-    let codeFont = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .regular)
-    let codeLabel = NSTextField(labelWithString: subtitle)
-    codeLabel.font = codeFont
-    codeLabel.textColor = .nord4
-    codeLabel.sizeToFit()
-    let codeBlockWidth = min(codeLabel.frame.width + codePadH * 2, textWidth)
-    let codeBlockHeight = codeLabel.frame.height + codePadV * 2
+    // Calculate body height dynamically, capped at maxBodyHeight
+    let bodyStorage = NSTextStorage(attributedString: bodyAttrString)
+    let bodyLayoutManager = NSLayoutManager()
+    let bodyTextContainer = NSTextContainer(size: NSSize(width: textWidth, height: .greatestFiniteMagnitude))
+    bodyTextContainer.lineFragmentPadding = 0
+    bodyLayoutManager.addTextContainer(bodyTextContainer)
+    bodyStorage.addLayoutManager(bodyLayoutManager)
+    bodyLayoutManager.glyphRange(for: bodyTextContainer)
+    let rawBodyHeight = bodyLayoutManager.usedRect(for: bodyTextContainer).height
+    let bodyViewHeight = min(rawBodyHeight + bodyInsetY * 2, maxBodyHeight)
 
     // ---- Overall dimensions ----
     let textBlockHeight = titleHeight + gapTitleSubtitle + codeBlockHeight + gapSubtitleBody + bodyViewHeight
@@ -234,9 +216,22 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let textX = padH + iconSize + padIconText
     let textYBase = (windowHeight - textBlockHeight) / 2
 
+    // ---- Body: Markdown rendering, dynamic multi-line height ----
+    let bodyTextView = NSTextView(frame: NSRect(x: textX, y: textYBase, width: textWidth, height: bodyViewHeight))
+    bodyTextView.isEditable = false
+    bodyTextView.isSelectable = false
+    bodyTextView.drawsBackground = false
+    bodyTextView.isHorizontallyResizable = false
+    bodyTextView.isVerticallyResizable = false
+    bodyTextView.textContainerInset = NSSize(width: 0, height: bodyInsetY)
+    bodyTextView.textContainer?.widthTracksTextView = true
+    bodyTextView.textContainer?.lineFragmentPadding = 0
+    bodyTextView.textContainer?.size = NSSize(width: textWidth, height: bodyViewHeight)
+    bodyTextView.textStorage?.setAttributedString(bodyAttrString)
+
     // Title
     let titleLabel = NSTextField(labelWithString: title)
-    titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+    titleLabel.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
     titleLabel.textColor = isDark ? .white : .black
     titleLabel.frame = NSRect(
         x: textX,
@@ -262,15 +257,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     codeLabel.frame = NSRect(x: codePadH, y: codePadV, width: codeLabel.frame.width, height: codeLabel.frame.height)
     codeBgView.addSubview(codeLabel)
 
-    // Body (markdown rendered) inside clip container
-    let bodyClipView = NSView()
-    bodyClipView.wantsLayer = true
-    bodyClipView.layer?.masksToBounds = true
-    bodyClipView.frame = NSRect(x: textX, y: textYBase, width: textWidth, height: bodyViewHeight)
-
-    bodyTextView.frame = NSRect(x: 0, y: 0, width: textWidth, height: bodyViewHeight)
-    bodyClipView.addSubview(bodyTextView)
-    visualEffectView.addSubview(bodyClipView)
+    visualEffectView.addSubview(bodyTextView)
 
     // Close button (hover visible)
     let closeBtn = NSButton()
