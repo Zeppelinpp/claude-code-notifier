@@ -66,18 +66,20 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
 
     // Layout constants
-    let padTop: CGFloat = 12
-    let padBottom: CGFloat = 12
+    let padTop: CGFloat = 10
+    let padBottom: CGFloat = 10
     let padH: CGFloat = 16
     let padIconText: CGFloat = 12
-    let iconSize: CGFloat = 40
     let closeSize: CGFloat = 16
     let closePad: CGFloat = 8
 
     let textWidth: CGFloat = 260
-    let titleHeight: CGFloat = 22
-    let gapTitleSubtitle: CGFloat = 4
-    let gapSubtitleBody: CGFloat = 6
+    let titleHeight: CGFloat = 17
+    let gapTitleSubtitle: CGFloat = 2
+    let gapSubtitleBody: CGFloat = 3
+    let minIconSize: CGFloat = 48
+    let maxIconSize: CGFloat = 56
+    let bodyInsetY: CGFloat = 2
 
     // ---- Body: Markdown rendering + dynamic height ----
     let bodyTextView = NSTextView(frame: NSRect(x: 0, y: 0, width: textWidth, height: 0))
@@ -86,12 +88,12 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     bodyTextView.drawsBackground = false
     bodyTextView.isHorizontallyResizable = false
     bodyTextView.isVerticallyResizable = false
-    bodyTextView.textContainerInset = NSSize(width: 0, height: 0)
+    bodyTextView.textContainerInset = NSSize(width: 0, height: bodyInsetY)
     bodyTextView.textContainer?.widthTracksTextView = true
     bodyTextView.textContainer?.lineFragmentPadding = 0
     bodyTextView.textContainer?.size = NSSize(width: textWidth, height: CGFloat.greatestFiniteMagnitude)
 
-    let bodyFont = NSFont.systemFont(ofSize: 12)
+    let bodyFont = NSFont.systemFont(ofSize: 11.5)
     let bodyColor: NSColor = isDark ? NSColor(white: 0.6, alpha: 1) : NSColor(white: 0.4, alpha: 1)
     let message = informativeText
 
@@ -149,11 +151,12 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     if bodyHeight < 16 {
         bodyHeight = 16
     }
+    let bodyViewHeight = ceil(bodyHeight) + bodyInsetY * 2 + 2
 
     // ---- Subtitle: code-block style path ----
     let codePadH: CGFloat = 6
-    let codePadV: CGFloat = 3
-    let codeFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+    let codePadV: CGFloat = 2
+    let codeFont = NSFont.monospacedSystemFont(ofSize: 10.5, weight: .regular)
     let codeLabel = NSTextField(labelWithString: subtitle)
     codeLabel.font = codeFont
     codeLabel.textColor = .nord4
@@ -162,8 +165,8 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let codeBlockHeight = codeLabel.frame.height + codePadV * 2
 
     // ---- Overall dimensions ----
-    let bodyBottomMargin: CGFloat = 4
-    let textBlockHeight = titleHeight + gapTitleSubtitle + codeBlockHeight + gapSubtitleBody + bodyHeight + bodyBottomMargin
+    let textBlockHeight = titleHeight + gapTitleSubtitle + codeBlockHeight + gapSubtitleBody + bodyViewHeight
+    let iconSize = min(max(textBlockHeight - 2, minIconSize), maxIconSize)
     let contentHeight = max(iconSize, textBlockHeight)
     let windowWidth = padH + iconSize + padIconText + textWidth + padH + closeSize + closePad
     let windowHeight = padTop + contentHeight + padBottom
@@ -181,18 +184,25 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     window.level = .floating
     window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
-    // Visual effect view (frosted glass, opaque to desktop)
+    // Background view (opaque dark base for readability on any background)
+    let backgroundView = NSView()
+    backgroundView.wantsLayer = true
+    backgroundView.layer?.backgroundColor = NSColor(white: 0.18, alpha: 0.94).cgColor
+    backgroundView.layer?.cornerRadius = 18
+    backgroundView.layer?.masksToBounds = true
+    if #available(macOS 10.15, *) {
+        backgroundView.layer?.cornerCurve = .continuous
+    }
+    window.contentView = backgroundView
+
+    // Visual effect view (popover material frosting)
     let visualEffectView = NSVisualEffectView()
     visualEffectView.material = .popover
     visualEffectView.blendingMode = .withinWindow
     visualEffectView.state = .active
-    visualEffectView.wantsLayer = true
-    visualEffectView.layer?.cornerRadius = 18
-    visualEffectView.layer?.masksToBounds = true
-    if #available(macOS 10.15, *) {
-        visualEffectView.layer?.cornerCurve = .continuous
-    }
-    window.contentView = visualEffectView
+    visualEffectView.frame = backgroundView.bounds
+    visualEffectView.autoresizingMask = [.width, .height]
+    backgroundView.addSubview(visualEffectView)
 
     // Icon
     let iconView = NSImageView()
@@ -214,7 +224,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     titleLabel.textColor = isDark ? .white : .black
     titleLabel.frame = NSRect(
         x: textX,
-        y: textYBase + bodyHeight + gapSubtitleBody + codeBlockHeight + gapTitleSubtitle + bodyBottomMargin,
+        y: textYBase + bodyViewHeight + gapSubtitleBody + codeBlockHeight + gapTitleSubtitle,
         width: textWidth,
         height: titleHeight
     )
@@ -227,7 +237,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     codeBgView.layer?.cornerRadius = 4
     codeBgView.frame = NSRect(
         x: textX,
-        y: textYBase + bodyHeight + gapSubtitleBody + bodyBottomMargin,
+        y: textYBase + bodyViewHeight + gapSubtitleBody,
         width: codeBlockWidth,
         height: codeBlockHeight
     )
@@ -237,7 +247,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     codeBgView.addSubview(codeLabel)
 
     // Body (markdown rendered)
-    bodyTextView.frame = NSRect(x: textX, y: textYBase + bodyBottomMargin, width: textWidth, height: bodyHeight)
+    bodyTextView.frame = NSRect(x: textX, y: textYBase, width: textWidth, height: bodyViewHeight)
     visualEffectView.addSubview(bodyTextView)
 
     // Close button (hover visible)
