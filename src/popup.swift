@@ -71,21 +71,21 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
 
     // Layout constants — expanded for markdown
-    let padTop: CGFloat = 14
-    let padBottom: CGFloat = 14
+    let padTop: CGFloat = 10
+    let padBottom: CGFloat = 10
     let padH: CGFloat = 10
-    let padIconText: CGFloat = 12
+    let padIconText: CGFloat = 8
     let closeSize: CGFloat = 16
     let closePad: CGFloat = 8
 
-    let textWidth: CGFloat = 300
-    let titleHeight: CGFloat = 18
-    let gapTitleSubtitle: CGFloat = 4
-    let gapSubtitleBody: CGFloat = 6
-    let minIconSize: CGFloat = 44
-    let maxIconSize: CGFloat = 56
-    let bodyInsetY: CGFloat = 4
-    let maxBodyHeight: CGFloat = 90
+    let textWidth: CGFloat = 260
+    let titleHeight: CGFloat = 16
+    let gapTitleSubtitle: CGFloat = 3
+    let gapSubtitleBody: CGFloat = 4
+    let minIconSize: CGFloat = 40
+    let maxIconSize: CGFloat = 48
+    let bodyInsetY: CGFloat = 2
+    let maxBodyHeight: CGFloat = 72
 
     let bodyFont = NSFont.systemFont(ofSize: 12)
     let bodyColor: NSColor = isDark ? NSColor(white: 0.6, alpha: 1) : NSColor(white: 0.4, alpha: 1)
