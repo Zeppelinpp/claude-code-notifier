@@ -26,6 +26,15 @@ class HoverView: NSView {
     }
 }
 
+class NotificationWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
+class TopAlignedTextView: NSTextView {
+    override var isFlipped: Bool { true }
+}
+
 class ActionHandler: NSObject {
     let action: () -> Void
     init(action: @escaping () -> Void) {
@@ -65,24 +74,24 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let screenFrame = screen.visibleFrame
     let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
 
-    // Layout constants
-    let padTop: CGFloat = 10
-    let padBottom: CGFloat = 10
-    let padH: CGFloat = 16
-    let padIconText: CGFloat = 12
-    let closeSize: CGFloat = 16
-    let closePad: CGFloat = 8
+    // Layout constants — compact
+    let padTop: CGFloat = 8
+    let padBottom: CGFloat = 8
+    let padH: CGFloat = 12
+    let padIconText: CGFloat = 10
+    let closeSize: CGFloat = 14
+    let closePad: CGFloat = 6
 
-    let textWidth: CGFloat = 260
-    let titleHeight: CGFloat = 17
+    let textWidth: CGFloat = 240
+    let titleHeight: CGFloat = 15
     let gapTitleSubtitle: CGFloat = 2
-    let gapSubtitleBody: CGFloat = 3
-    let minIconSize: CGFloat = 48
-    let maxIconSize: CGFloat = 56
+    let gapSubtitleBody: CGFloat = 2
+    let minIconSize: CGFloat = 36
+    let maxIconSize: CGFloat = 44
     let bodyInsetY: CGFloat = 2
 
     // ---- Body: Markdown rendering + dynamic height ----
-    let bodyTextView = NSTextView(frame: NSRect(x: 0, y: 0, width: textWidth, height: 0))
+    let bodyTextView = TopAlignedTextView(frame: NSRect(x: 0, y: 0, width: textWidth, height: 0))
     bodyTextView.isEditable = false
     bodyTextView.isSelectable = false
     bodyTextView.drawsBackground = false
@@ -93,9 +102,16 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     bodyTextView.textContainer?.lineFragmentPadding = 0
     bodyTextView.textContainer?.size = NSSize(width: textWidth, height: CGFloat.greatestFiniteMagnitude)
 
-    let bodyFont = NSFont.systemFont(ofSize: 11.5)
+    let bodyFont = NSFont.systemFont(ofSize: 10.5)
     let bodyColor: NSColor = isDark ? NSColor(white: 0.6, alpha: 1) : NSColor(white: 0.4, alpha: 1)
-    let message = informativeText
+    let collapsed = informativeText
+        .components(separatedBy: .whitespacesAndNewlines)
+        .filter { !$0.isEmpty }
+        .joined(separator: " ")
+    let maxBodyChars = 50
+    let message = collapsed.count > maxBodyChars
+        ? String(collapsed.prefix(maxBodyChars)) + "..."
+        : collapsed
 
     if #available(macOS 12.0, *) {
         if let data = message.data(using: .utf8),
@@ -156,7 +172,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     // ---- Subtitle: code-block style path ----
     let codePadH: CGFloat = 6
     let codePadV: CGFloat = 2
-    let codeFont = NSFont.monospacedSystemFont(ofSize: 10.5, weight: .regular)
+    let codeFont = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .regular)
     let codeLabel = NSTextField(labelWithString: subtitle)
     codeLabel.font = codeFont
     codeLabel.textColor = .nord4
@@ -172,7 +188,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let windowHeight = padTop + contentHeight + padBottom
 
     // ---- Window ----
-    let window = NSWindow(
+    let window = NotificationWindow(
         contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
         styleMask: [.borderless],
         backing: .buffered,
@@ -187,7 +203,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     // Background view (opaque dark base for readability on any background)
     let backgroundView = NSView()
     backgroundView.wantsLayer = true
-    backgroundView.layer?.backgroundColor = NSColor(white: 0.18, alpha: 0.94).cgColor
+    backgroundView.layer?.backgroundColor = NSColor(white: 0.18, alpha: 0.98).cgColor
     backgroundView.layer?.cornerRadius = 18
     backgroundView.layer?.masksToBounds = true
     if #available(macOS 10.15, *) {
@@ -220,7 +236,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
 
     // Title
     let titleLabel = NSTextField(labelWithString: title)
-    titleLabel.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
+    titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
     titleLabel.textColor = isDark ? .white : .black
     titleLabel.frame = NSRect(
         x: textX,
@@ -246,15 +262,21 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     codeLabel.frame = NSRect(x: codePadH, y: codePadV, width: codeLabel.frame.width, height: codeLabel.frame.height)
     codeBgView.addSubview(codeLabel)
 
-    // Body (markdown rendered)
-    bodyTextView.frame = NSRect(x: textX, y: textYBase, width: textWidth, height: bodyViewHeight)
-    visualEffectView.addSubview(bodyTextView)
+    // Body (markdown rendered) inside clip container
+    let bodyClipView = NSView()
+    bodyClipView.wantsLayer = true
+    bodyClipView.layer?.masksToBounds = true
+    bodyClipView.frame = NSRect(x: textX, y: textYBase, width: textWidth, height: bodyViewHeight)
+
+    bodyTextView.frame = NSRect(x: 0, y: 0, width: textWidth, height: bodyViewHeight)
+    bodyClipView.addSubview(bodyTextView)
+    visualEffectView.addSubview(bodyClipView)
 
     // Close button (hover visible)
     let closeBtn = NSButton()
     closeBtn.bezelStyle = .circular
     closeBtn.title = "×"
-    closeBtn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+    closeBtn.font = NSFont.systemFont(ofSize: 11, weight: .medium)
     closeBtn.isBordered = false
     closeBtn.wantsLayer = true
     closeBtn.layer?.backgroundColor = NSColor.clear.cgColor
@@ -334,6 +356,7 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
         }
     }
 
+    window.orderFrontRegardless()
     window.makeKeyAndOrderFront(nil)
 }
 
