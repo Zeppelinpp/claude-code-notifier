@@ -3,7 +3,55 @@
 # Sends macOS popup notification when Claude Code stops.
 # Optional Bark push to iPhone via BARK_KEY env var or config file.
 
-read -r input
+# Read full JSON input from Claude Code hook (includes transcript_path)
+input=$(cat)
+
+# Extract the last assistant message from the transcript
+message="Wait for Input"
+transcript_path=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('transcript_path',''))" 2>/dev/null)
+
+if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+    extracted=$(python3 -c "
+import json, sys, os
+path = os.path.expanduser('$transcript_path')
+try:
+    last_text = None
+    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if d.get('type') != 'assistant':
+                continue
+            msg = d.get('message', {})
+            if msg.get('role') != 'assistant':
+                continue
+            content = msg.get('content', [])
+            if not isinstance(content, list):
+                continue
+            for item in content:
+                if item.get('type') == 'text':
+                    text = item.get('text', '').strip()
+                    if text:
+                        last_text = text
+    if last_text:
+        # Collapse whitespace to a single line
+        last_text = ' '.join(last_text.split())
+        # Limit to ~100 chars
+        if len(last_text) > 100:
+            last_text = last_text[:97] + '...'
+        print(last_text)
+except Exception:
+    pass
+" 2>/dev/null)
+    if [ -n "$extracted" ]; then
+        message="$extracted"
+    fi
+fi
 
 # Detect the terminal emulator that is running this shell.
 find_terminal_bundle_id() {
@@ -61,7 +109,7 @@ cwd=$(echo "$PWD" | sed "s|^$HOME|~|")
 terminal_bundle_id=$(find_terminal_bundle_id)
 
 # macOS popup (async)
-"$APP_PATH" "Claude Code" "$cwd" "Wait for Input" "$terminal_bundle_id" &
+"$APP_PATH" "Claude Code" "$cwd" "$message" "$terminal_bundle_id" &
 
 # --- Optional Bark push to iPhone ---
 BARK_CONFIG_DIR="$HOME/.claude/plugin-configs/claude-code-notifier"
@@ -74,10 +122,11 @@ fi
 
 if [ -n "$BARK_KEY" ] && [ "$BARK_KEY" != "your-bark-key-here" ]; then
     ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
-    python3 -c "
-import urllib.parse
+    env _CCN_MSG="$message" python3 -c "
+import urllib.parse, os
+msg = os.environ.get('_CCN_MSG', 'Wait for Input')
 t='${BARK_KEY}'
-path='/'+urllib.parse.quote(t)+'/'+urllib.parse.quote('Claude Code')+'/'+urllib.parse.quote('Wait for Input')+'?'+urllib.parse.urlencode({
+path='/'+urllib.parse.quote(t)+'/'+urllib.parse.quote('Claude Code')+'/'+urllib.parse.quote(msg)+'?'+urllib.parse.urlencode({
     'subtitle': '${cwd}',
     'icon': '${ICON_URL}'
 })
