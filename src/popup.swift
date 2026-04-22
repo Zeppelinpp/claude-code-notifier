@@ -82,8 +82,8 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     let titleHeight: CGFloat = 16
     let gapTitleSubtitle: CGFloat = 3
     let gapSubtitleBody: CGFloat = 4
-    let minIconSize: CGFloat = 40
-    let maxIconSize: CGFloat = 48
+    let minIconSize: CGFloat = 44
+    let maxIconSize: CGFloat = 56
     let bodyInsetY: CGFloat = 2
     let maxBodyHeight: CGFloat = 72
 
