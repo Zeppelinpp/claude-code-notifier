@@ -170,18 +170,25 @@ fi
 
 if [ -n "$BARK_KEY" ] && [ "$BARK_KEY" != "your-bark-key-here" ]; then
   ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
-  env _CCN_MSG="$message" python3 -c "
-import urllib.parse, os
-msg = os.environ.get('_CCN_MSG', 'Wait for Input')
-t='${BARK_KEY}'
-path='/'+urllib.parse.quote(t)+'/'+urllib.parse.quote('Claude Code')+'/'+urllib.parse.quote(msg)+'?'+urllib.parse.urlencode({
-    'subtitle': '${cwd}',
-    'icon': '${ICON_URL}',
-    'markdown': msg
-})
-print('https://api.day.app'+path)
-" | {
-    read -r url
-    curl -fsS "$url" >/dev/null 2>&1
-  }
+  env _CCN_BARK_KEY="$BARK_KEY" _CCN_MSG="$message" _CCN_CWD="$cwd" _CCN_ICON="$ICON_URL" python3 -c "
+import json, urllib.request, os
+payload = json.dumps({
+    'device_key': os.environ.get('_CCN_BARK_KEY'),
+    'title': 'Claude Code',
+    'body': os.environ.get('_CCN_MSG', 'Wait for Input'),
+    'subtitle': os.environ.get('_CCN_CWD', ''),
+    'icon': os.environ.get('_CCN_ICON', '')
+}).encode('utf-8')
+req = urllib.request.Request(
+    'https://api.day.app/push',
+    data=payload,
+    headers={'Content-Type': 'application/json'},
+    method='POST'
+)
+try:
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        print(resp.read().decode('utf-8'))
+except Exception as e:
+    print('Bark push failed:', e, file=os.sys.stderr)
+" >/dev/null 2>&1
 fi
