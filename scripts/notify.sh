@@ -66,6 +66,69 @@ except Exception:
       message="$extracted"
     fi
   fi
+
+  # Try 3: Kimi CLI — parse wire.jsonl from ~/.kimi/sessions/
+  if [ "$message" = "Wait for Input" ]; then
+    hook_event_name=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('hook_event_name',''))" 2>/dev/null)
+    if [ "$hook_event_name" = "Stop" ]; then
+      # Try to locate the wire.jsonl for this session
+      wire_path=""
+      # First: check if hook input provides a session_id
+      session_id=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('session_id',''))" 2>/dev/null)
+      if [ -n "$session_id" ]; then
+        # Search for this session under ~/.kimi/sessions/
+        found=$(find ~/.kimi/sessions -name "wire.jsonl" -path "*/${session_id}/*" 2>/dev/null | head -1)
+        [ -n "$found" ] && wire_path="$found"
+      fi
+      # Fallback: find the most recently modified wire.jsonl
+      if [ -z "$wire_path" ]; then
+        found=$(find ~/.kimi/sessions -name "wire.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+        [ -n "$found" ] && wire_path="$found"
+      fi
+      if [ -n "$wire_path" ] && [ -f "$wire_path" ]; then
+        extracted=$(python3 -c "
+import json, os
+path = os.path.expanduser('$wire_path')
+try:
+    last_text = None
+    last_think = None
+    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            msg = d.get('message', {})
+            if msg.get('type') != 'ContentPart':
+                continue
+            payload = msg.get('payload', {})
+            part_type = payload.get('type')
+            if part_type == 'text':
+                text = payload.get('text', '').strip()
+                if text:
+                    last_text = text
+            elif part_type == 'think':
+                think = payload.get('think', '').strip()
+                if think:
+                    last_think = think
+    result = last_text if last_text else last_think
+    if result:
+        result = ' '.join(result.split())
+        if len(result) > 100:
+            result = result[:97] + '...'
+        print(result)
+except Exception:
+    pass
+" 2>/dev/null)
+        if [ -n "$extracted" ]; then
+          message="$extracted"
+        fi
+      fi
+    fi
+  fi
 fi
 
 # Detect the terminal emulator that is running this shell.
