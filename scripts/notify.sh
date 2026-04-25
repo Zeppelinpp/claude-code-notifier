@@ -190,7 +190,7 @@ import json, urllib.request, os
 payload = json.dumps({
     'device_key': os.environ.get('_CCN_BARK_KEY'),
     'title': os.environ.get('_CCN_TITLE', 'Claude Code'),
-    'body': os.environ.get('_CCN_MSG', 'Wait for Input'),
+    'markdown': os.environ.get('_CCN_MSG', 'Wait for Input'),
     'subtitle': os.environ.get('_CCN_CWD', ''),
     'icon': os.environ.get('_CCN_ICON', '')
 }).encode('utf-8')
