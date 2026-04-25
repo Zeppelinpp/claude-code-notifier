@@ -5,6 +5,8 @@
 [![macOS](https://img.shields.io/badge/macOS-11.0%2B-blue)](https://www.apple.com/macos/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+[English](README.md) · [中文](README.zh.md)
+
 When your AI coding agent stops responding — task complete, waiting for input, or session ended — CodePing delivers a sleek native macOS popup right on your active monitor. Pair it with [Bark](https://github.com/Finb/Bark) and the same alert lands on your iPhone instantly.
 
 **Supported agents:** [Claude Code](https://claude.ai/code) · [Kimi CLI](https://platform.kimi.com/)
@@ -150,8 +152,8 @@ Requires macOS 11.0+ and Swift toolchain. Key things you might customize in `pop
 ## 🙏 Credits
 
 - [Bark](https://github.com/Finb/Bark) — Finb's open-source iOS push notification tool
-- [Claude Code](https://claude.ai/code) — Anthropic's AI coding assistant
-- [Kimi CLI](https://platform.kimi.com/) — Moonshot AI's coding assistant
+- [Claude Code](https://github.com/anthropics/claude-code) — Anthropic's AI coding assistant
+- [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) — Moonshot AI's coding assistant
 
 ---
 

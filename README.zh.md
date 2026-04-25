@@ -5,6 +5,8 @@
 [![macOS](https://img.shields.io/badge/macOS-11.0%2B-blue)](https://www.apple.com/macos/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+[English](README.md) · [中文](README.zh.md)
+
 当你的 AI 编程助手停止响应时——无论是任务完成、等待输入还是会话结束——CodePing 会在你当前活跃显示器上弹出一个精致的 macOS 原生面板。搭配 [Bark](https://github.com/Finb/Bark) 使用，同一时刻你的 iPhone 也会收到推送。
 
 **已支持：** [Claude Code](https://claude.ai/code) · [Kimi CLI](https://platform.kimi.com/)
@@ -150,8 +152,8 @@ cp ClaudeCodeNotifier ../ClaudeCodeNotifier.app/Contents/MacOS/
 ## 🙏 致谢
 
 - [Bark](https://github.com/Finb/Bark) — Finb 开发的开源 iOS 推送通知工具
-- [Claude Code](https://claude.ai/code) — Anthropic 推出的 AI 编程助手
-- [Kimi CLI](https://platform.kimi.com/) — Moonshot AI 推出的编程助手
+- [Claude Code](https://github.com/anthropics/claude-code) — Anthropic 推出的 AI 编程助手
+- [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) — Moonshot AI 推出的编程助手
 
 ---
 
