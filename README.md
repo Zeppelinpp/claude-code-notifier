@@ -1,42 +1,41 @@
-# Claude Code Notifier
+# CodePing
 
-> Beautiful macOS popup + iPhone push notifications for Claude Code. Never miss when your AI finishes thinking.
+> Beautiful macOS popup + iPhone push notifications for AI coding agents. Never miss when your AI finishes thinking.
 
 [![macOS](https://img.shields.io/badge/macOS-11.0%2B-blue)](https://www.apple.com/macos/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-When Claude Code stops responding — task complete, waiting for input, or session ended — this notifier delivers a sleek native macOS popup right on your active monitor. Pair it with [Bark](https://github.com/Finb/Bark) and the same alert lands on your iPhone instantly.
+When your AI coding agent stops responding — task complete, waiting for input, or session ended — CodePing delivers a sleek native macOS popup right on your active monitor. Pair it with [Bark](https://github.com/Finb/Bark) and the same alert lands on your iPhone instantly.
+
+**Supported agents:** [Claude Code](https://claude.ai/code) · [Kimi CLI](https://platform.kimi.com/)
 
 ---
 
 ## ✨ Features
 
+- **Multi-CLI Support** — Auto-detects Claude Code, Kimi CLI, and more coming
+- **Per-CLI Branding** — Each agent gets its own icon in the popup and on your iPhone
 - **Native macOS Popup** — Frosted glass panel with continuous rounded corners, auto dark/light mode, and system Glass sound
 - **Multi-Monitor Aware** — Appears on whichever screen your cursor is currently on
 - **Click to Focus** — Click the notification to jump straight back to the terminal app you were using (Ghostty, iTerm2, Terminal.app, etc.)
 - **Hover to Dismiss** — Elegant close button fades in on hover
 - **iPhone Sync** — Push to iPhone via [Bark](https://apps.apple.com/app/bark-customed-notifications/id1403753865) using APNs
-- **Claude Branding** — Official Claude Code mascot icon, not the generic desktop app icon
 
 ---
 
 ## 📸 Preview
 
-```
-┌─────────────────────────────┐
-│  [🟠]  Claude Code           │
-│         Wait for Input        │
-│         ~/projects/my-app     │
-└─────────────────────────────┘
-```
+![Claude Code Preview](assets/Claude-Code-Preview.png)
+![Kimi Preview](assets/Kimi-Preview.png)
 
-*Frosted glass panel matching your macOS theme, sliding in on the active desktop.*
+*Frosted glass panel matching your macOS theme, sliding in on the active desktop. Icon switches automatically based on which CLI triggered it.*
 
 ---
 
 ## 🚀 Quick Start
 
-### Recommended: Plugin Install
+<details open>
+<summary><b>Claude Code (Plugin)</b></summary>
 
 Register this repository as a marketplace in your Claude Code settings (`~/.claude/settings.json`):
 
@@ -46,7 +45,7 @@ Register this repository as a marketplace in your Claude Code settings (`~/.clau
     "zeppelinpp": {
       "source": {
         "source": "github",
-        "repo": "Zeppelinpp/claude-code-notifier"
+        "repo": "Zeppelinpp/CodePing"
       }
     }
   }
@@ -56,10 +55,27 @@ Register this repository as a marketplace in your Claude Code settings (`~/.clau
 Then install the plugin inside Claude Code:
 
 ```
-/plugin install claude-code-notifier@zeppelinpp
+/plugin install codeping@zeppelinpp
 ```
 
-That's it — the Stop hook is active immediately. No manual script or settings editing required.
+</details>
+
+<details>
+<summary><b>Kimi CLI (Hook)</b></summary>
+
+Add to your Kimi CLI config (`~/.kimi/config.toml`):
+
+```toml
+[[hooks]]
+event = "Stop"
+command = "/absolute/path/to/CodePing/scripts/notify.sh"
+matcher = ""
+timeout = 30
+```
+
+Replace `/absolute/path/to/CodePing` with the actual path where you cloned this repository.
+
+</details>
 
 ### Configure Bark (Optional)
 
@@ -90,7 +106,7 @@ For more Bark features, visit the [Bark GitHub repository](https://github.com/Fi
 If you prefer not to use the plugin system, use the standalone installer:
 
 ```bash
-cd claude-code-notifier
+cd CodePing
 ./install.sh          # interactive: asks before overwriting
 ./install.sh --force  # non-interactive: auto-overwrite for updates
 ```
@@ -102,33 +118,6 @@ To migrate from legacy hook to plugin mode:
 ```bash
 ./install.sh --uninstall   # removes legacy settings.json hook
 # then use /plugin install inside Claude Code
-```
-
----
-
-## 📁 Repository Structure
-
-```
-claude-code-notifier/
-├── .claude-plugin/
-│   ├── plugin.json          # Plugin manifest
-│   └── marketplace.json     # Marketplace manifest
-├── hooks/
-│   └── hooks.json           # Claude Code Stop hook
-├── skills/
-│   └── bark-setup/
-│       └── SKILL.md         # Interactive Bark configuration skill
-├── scripts/
-│   ├── notify.sh            # Plugin notification script
-│   └── setup-bark.sh        # Bark key configuration
-├── ClaudeCodeNotifier.app/  # Compiled macOS notifier app
-├── src/
-│   └── popup.swift          # Swift source (customizable)
-├── assets/
-│   └── claudecode-color.png # Claude Code mascot icon
-├── install.sh               # Standalone installer (legacy)
-├── README.md
-└── README.zh.md
 ```
 
 ---
@@ -161,7 +150,8 @@ Requires macOS 11.0+ and Swift toolchain. Key things you might customize in `pop
 ## 🙏 Credits
 
 - [Bark](https://github.com/Finb/Bark) — Finb's open-source iOS push notification tool
-- Claude Code — Anthropic's AI coding assistant
+- [Claude Code](https://claude.ai/code) — Anthropic's AI coding assistant
+- [Kimi CLI](https://platform.kimi.com/) — Moonshot AI's coding assistant
 
 ---
 

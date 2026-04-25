@@ -1,20 +1,22 @@
 {
-  "name": "claude-code-notifier",
+  "name": "codeping",
   "version": "1.0.6",
-  "description": "Beautiful macOS popup + iPhone push notifications when Claude Code stops",
+  "description": "Beautiful macOS popup + iPhone push notifications for AI coding agents",
   "author": {
     "name": "Zeppelinpp",
     "url": "https://github.com/Zeppelinpp"
   },
-  "homepage": "https://github.com/Zeppelinpp/claude-code-notifier",
-  "repository": "https://github.com/Zeppelinpp/claude-code-notifier",
+  "homepage": "https://github.com/Zeppelinpp/CodePing",
+  "repository": "https://github.com/Zeppelinpp/CodePing",
   "license": "MIT",
   "keywords": [
     "notifications",
     "macos",
     "bark",
     "iphone",
-    "desktop"
+    "desktop",
+    "claude",
+    "kimi"
   ],
   "skills": [
     "./skills/bark-setup"

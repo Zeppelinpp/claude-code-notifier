@@ -150,14 +150,30 @@ find_terminal_bundle_id() {
   echo ""
 }
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}"
+# Resolve plugin root before using it for assets
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 APP_PATH="${PLUGIN_ROOT}/ClaudeCodeNotifier.app/Contents/MacOS/ClaudeCodeNotifier"
+
+# Detect which CLI invoked this hook and set title/icon accordingly
+CLI_NAME="Claude Code"
+ICON_PATH=""
+BARK_ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/CodePing/main/assets/claudecode-color.png"
+
+if [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  # Not Claude Code — check if input looks like Kimi CLI
+  hook_event_name=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('hook_event_name',''))" 2>/dev/null)
+  if [ "$hook_event_name" = "Stop" ]; then
+    CLI_NAME="Kimi"
+    ICON_PATH="${PLUGIN_ROOT}/assets/kimi-color.png"
+    BARK_ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/CodePing/main/assets/kimi-color.png"
+  fi
+fi
 
 cwd=$(echo "$PWD" | sed "s|^$HOME|~|")
 terminal_bundle_id=$(find_terminal_bundle_id)
 
 # macOS popup (async)
-"$APP_PATH" "Claude Code" "$cwd" "$message" "$terminal_bundle_id" &
+"$APP_PATH" "$CLI_NAME" "$cwd" "$message" "$terminal_bundle_id" "$ICON_PATH" &
 
 # --- Optional Bark push to iPhone ---
 BARK_CONFIG_DIR="$HOME/.claude/plugin-configs/claude-code-notifier"
@@ -169,12 +185,11 @@ if [ -z "$BARK_KEY" ] && [ -f "$BARK_CONFIG_FILE" ]; then
 fi
 
 if [ -n "$BARK_KEY" ] && [ "$BARK_KEY" != "your-bark-key-here" ]; then
-  ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/claude-code-notifier/main/assets/claudecode-color.png"
-  env _CCN_BARK_KEY="$BARK_KEY" _CCN_MSG="$message" _CCN_CWD="$cwd" _CCN_ICON="$ICON_URL" python3 -c "
+  env _CCN_BARK_KEY="$BARK_KEY" _CCN_MSG="$message" _CCN_CWD="$cwd" _CCN_ICON="$BARK_ICON_URL" _CCN_TITLE="$CLI_NAME" python3 -c "
 import json, urllib.request, os
 payload = json.dumps({
     'device_key': os.environ.get('_CCN_BARK_KEY'),
-    'title': 'Claude Code',
+    'title': os.environ.get('_CCN_TITLE', 'Claude Code'),
     'body': os.environ.get('_CCN_MSG', 'Wait for Input'),
     'subtitle': os.environ.get('_CCN_CWD', ''),
     'icon': os.environ.get('_CCN_ICON', '')

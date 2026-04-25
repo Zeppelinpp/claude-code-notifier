@@ -2,12 +2,12 @@
   "name": "zeppelinpp",
   "plugins": [
     {
-      "name": "claude-code-notifier",
+      "name": "codeping",
       "source": {
         "source": "github",
-        "repo": "Zeppelinpp/claude-code-notifier"
+        "repo": "Zeppelinpp/CodePing"
       },
-      "description": "Beautiful macOS popup + iPhone push notifications when Claude Code stops",
+      "description": "Beautiful macOS popup + iPhone push notifications for AI coding agents",
       "version": "1.0.0"
     }
   ],

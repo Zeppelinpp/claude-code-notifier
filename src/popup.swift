@@ -50,7 +50,7 @@ extension NSColor {
     static let nord8 = NSColor(red: 0.533, green: 0.753, blue: 0.816, alpha: 1.0)  // #88C0D0
 }
 
-func showNotification(title: String, subtitle: String, informativeText: String, terminalBundleID: String) {
+func showNotification(title: String, subtitle: String, informativeText: String, terminalBundleID: String, iconPath: String = "") {
     // Play Glass sound
     if let sound = NSSound(named: "Glass") {
         sound.play()
@@ -205,10 +205,18 @@ func showNotification(title: String, subtitle: String, informativeText: String, 
     // Icon
     let iconView = NSImageView()
     iconView.imageScaling = .scaleProportionallyUpOrDown
-    if let iconPath = Bundle.main.path(forResource: "AppIcon", ofType: "png"),
-       let icon = NSImage(contentsOfFile: iconPath) {
-        iconView.image = icon
-    }
+    // custom icon path; fallback to bundled AppIcon.png
+    let iconImage: NSImage? = {
+        if !iconPath.isEmpty, let icon = NSImage(contentsOfFile: iconPath) {
+            return icon
+        }
+        if let bundledPath = Bundle.main.path(forResource: "AppIcon", ofType: "png"),
+           let icon = NSImage(contentsOfFile: bundledPath) {
+            return icon
+        }
+        return nil
+    }()
+    iconView.image = iconImage
     iconView.frame = NSRect(x: padH, y: (windowHeight - iconSize) / 2, width: iconSize, height: iconSize)
     visualEffectView.addSubview(iconView)
 
@@ -354,7 +362,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let subtitle = args.count > 2 ? args[2] : ""
         let body = args.count > 3 ? args[3] : "Wait for Input"
         let bundleID = args.count > 4 ? args[4] : ""
-        showNotification(title: title, subtitle: subtitle, informativeText: body, terminalBundleID: bundleID)
+        let iconPath = args.count > 5 ? args[5] : ""
+        showNotification(title: title, subtitle: subtitle, informativeText: body, terminalBundleID: bundleID, iconPath: iconPath)
     }
 }
 
