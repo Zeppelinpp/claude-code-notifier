@@ -1,9 +1,8 @@
 #!/bin/bash
-# Claude Code Notifier - Plugin Hook
-# Sends macOS popup notification when Claude Code stops.
-# Optional Bark push to iPhone via BARK_KEY env var or config file.
+# CodePing — Claude Code / Codex / Kimi CLI Notifier
+# Sends native macOS popup + optional Bark push when the assistant stops.
 
-# Read full JSON input from Claude Code hook (includes transcript_path)
+# Read full JSON input from hook (includes transcript_path)
 input=$(cat)
 
 # Extract the last assistant message from the transcript
@@ -22,8 +21,8 @@ else
 import json, sys, os
 path = os.path.expanduser('$transcript_path')
 try:
-    last_text = None
-    last_thinking = None
+    # Detect format by peeking at first non-empty line
+    fmt = 'claude'
     with open(path, 'r', encoding='utf-8', errors='ignore') as f:
         for line in f:
             line = line.strip()
@@ -33,23 +32,69 @@ try:
                 d = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if d.get('type') != 'assistant':
+            if d.get('type') == 'response_item':
+                fmt = 'codex'
+            break
+
+    last_text = None
+    last_thinking = None
+
+    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
                 continue
-            msg = d.get('message', {})
-            if msg.get('role') != 'assistant':
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
                 continue
-            content = msg.get('content', [])
-            if not isinstance(content, list):
-                continue
-            for item in content:
-                if item.get('type') == 'text':
-                    text = item.get('text', '').strip()
-                    if text:
-                        last_text = text
-                elif item.get('type') == 'thinking':
-                    thinking = item.get('thinking', '').strip()
-                    if thinking:
-                        last_thinking = thinking
+
+            if fmt == 'codex':
+                # Codex format: {'type': 'response_item', 'payload': {'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': '...'}], 'phase': 'final_answer'}}
+                if d.get('type') != 'response_item':
+                    continue
+                payload = d.get('payload', {})
+                if payload.get('type') != 'message':
+                    continue
+                if payload.get('role') != 'assistant':
+                    continue
+                content = payload.get('content', [])
+                if not isinstance(content, list):
+                    continue
+                phase = payload.get('phase', '')
+                for item in content:
+                    if item.get('type') == 'output_text':
+                        text = item.get('text', '').strip()
+                        if text:
+                            # Prefer final_answer over commentary
+                            if phase == 'final_answer':
+                                last_text = text
+                            elif last_text is None:
+                                last_text = text
+                    elif item.get('type') == 'reasoning':
+                        thinking = item.get('text', '').strip()
+                        if thinking:
+                            last_thinking = thinking
+            else:
+                # Claude Code format: {'type': 'assistant', 'message': {'role': 'assistant', 'content': [{'type': 'text', 'text': '...'}]}}
+                if d.get('type') != 'assistant':
+                    continue
+                msg = d.get('message', {})
+                if msg.get('role') != 'assistant':
+                    continue
+                content = msg.get('content', [])
+                if not isinstance(content, list):
+                    continue
+                for item in content:
+                    if item.get('type') == 'text':
+                        text = item.get('text', '').strip()
+                        if text:
+                            last_text = text
+                    elif item.get('type') == 'thinking':
+                        thinking = item.get('thinking', '').strip()
+                        if thinking:
+                            last_thinking = thinking
+
     # Prefer text over thinking
     result = last_text if last_text else last_thinking
     if result:
@@ -214,7 +259,7 @@ find_terminal_bundle_id() {
 }
 
 # Resolve plugin root before using it for assets
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"
 APP_PATH="${PLUGIN_ROOT}/ClaudeCodeNotifier.app/Contents/MacOS/ClaudeCodeNotifier"
 
 # Detect which CLI invoked this hook and set title/icon accordingly
@@ -222,10 +267,21 @@ CLI_NAME="Claude Code"
 ICON_PATH=""
 BARK_ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/CodePing/main/assets/claudecode-color.png"
 
-if [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  # Not Claude Code — check if input looks like Kimi CLI
+if [ -n "${CODEX_PLUGIN_ROOT:-}" ]; then
+  # Codex plugin mode
+  CLI_NAME="Codex"
+  ICON_PATH="${PLUGIN_ROOT}/assets/codex-color.png"
+  BARK_ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/CodePing/main/assets/codex-color.png"
+elif [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  # Not Claude Code — check if input looks like Kimi or Codex (legacy mode)
   hook_event_name=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('hook_event_name',''))" 2>/dev/null)
-  if [ "$hook_event_name" = "Stop" ]; then
+  stop_hook_active=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('stop_hook_active',''))" 2>/dev/null)
+  if [ "$stop_hook_active" = "True" ] || [ "$stop_hook_active" = "true" ]; then
+    # Codex legacy mode (stop_hook_active is Codex-specific)
+    CLI_NAME="Codex"
+    ICON_PATH="${PLUGIN_ROOT}/assets/codex-color.png"
+    BARK_ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/CodePing/main/assets/codex-color.png"
+  elif [ "$hook_event_name" = "Stop" ]; then
     CLI_NAME="Kimi"
     ICON_PATH="${PLUGIN_ROOT}/assets/kimi-color.png"
     BARK_ICON_URL="https://raw.githubusercontent.com/Zeppelinpp/CodePing/main/assets/kimi-color.png"

@@ -1,0 +1,14 @@
+{
+  "name": "codeping",
+  "version": "1.1.0",
+  "description": "Native macOS popup + optional Bark push when Codex / Claude Code / Kimi stops responding.",
+  "author": {
+    "name": "Zeppelinpp",
+    "url": "https://github.com/Zeppelinpp"
+  },
+  "homepage": "https://github.com/Zeppelinpp/CodePing",
+  "repository": "https://github.com/Zeppelinpp/CodePing.git",
+  "license": "MIT",
+  "keywords": ["notification", "macos", "bark", "codex", "claude"],
+  "hooks": "./codex-hooks.json"
+}
