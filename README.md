@@ -191,6 +191,7 @@ Requires macOS 11.0+ and Swift toolchain. Key things you might customize in `pop
 
 - [Bark](https://github.com/Finb/Bark) — Finb's open-source iOS push notification tool
 - [Claude Code](https://github.com/anthropics/claude-code) — Anthropic's AI coding assistant
+- [Codex CLI](https://github.com/openai/codex) — OpenAI's lightweight coding agent
 - [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) — Moonshot AI's coding assistant
 
 ---

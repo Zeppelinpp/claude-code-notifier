@@ -191,6 +191,7 @@ cp ClaudeCodeNotifier ../ClaudeCodeNotifier.app/Contents/MacOS/
 
 - [Bark](https://github.com/Finb/Bark) — Finb 开发的开源 iOS 推送通知工具
 - [Claude Code](https://github.com/anthropics/claude-code) — Anthropic 推出的 AI 编程助手
+- [Codex CLI](https://github.com/openai/codex) — OpenAI 推出的终端编码助手
 - [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) — Moonshot AI 推出的编程助手
 
 ---

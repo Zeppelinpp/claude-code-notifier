@@ -207,7 +207,7 @@ elif [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   hook_event_name=$(json_string_value "hook_event_name")
   transcript_path=$(json_string_value "transcript_path")
   codex_payload="false"
-  if json_has_key "model" || json_has_key "permission_mode" || json_has_key "turn_id" || json_has_key "stop_hook_active" || printf '%s' "$transcript_path" | grep -q '/.codex/sessions/'; then
+  if json_has_key "permission_mode" || json_has_key "turn_id" || printf '%s' "$transcript_path" | grep -q '/.codex/sessions/'; then
     codex_payload="true"
   fi
   if [ "$codex_payload" = "true" ]; then
