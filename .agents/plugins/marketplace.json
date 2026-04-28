@@ -1,0 +1,20 @@
+{
+  "name": "zeppelinpp",
+  "interface": {
+    "displayName": "Zeppelinpp"
+  },
+  "plugins": [
+    {
+      "name": "codeping",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codeping"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
