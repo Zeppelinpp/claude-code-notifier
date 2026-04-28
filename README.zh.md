@@ -28,6 +28,7 @@
 ## 📸 效果预览
 
 ![Claude Code Preview](assets/Claude-Code-Preview.png)
+![Codex Preview](assets/Codex-Preview.png)
 ![Kimi Preview](assets/Kimi-Preview.png)
 
 *与你的 macOS 主题一致的毛玻璃面板，在活跃桌面丝滑弹出。图标会根据触发通知的 CLI 自动切换。*

@@ -28,6 +28,7 @@ When your AI coding agent stops responding — task complete, waiting for input,
 ## 📸 Preview
 
 ![Claude Code Preview](assets/Claude-Code-Preview.png)
+![Codex Preview](assets/Codex-Preview.png)
 ![Kimi Preview](assets/Kimi-Preview.png)
 
 *Frosted glass panel matching your macOS theme, sliding in on the active desktop. Icon switches automatically based on which CLI triggered it.*
