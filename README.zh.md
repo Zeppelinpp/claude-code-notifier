@@ -9,7 +9,7 @@
 
 当你的 AI 编程助手停止响应时——无论是任务完成、等待输入还是会话结束——CodePing 会在你当前活跃显示器上弹出一个精致的 macOS 原生面板。搭配 [Bark](https://github.com/Finb/Bark) 使用，同一时刻你的 iPhone 也会收到推送。
 
-**已支持：** Codex · [Claude Code](https://claude.ai/code) · [Kimi CLI](https://platform.kimi.com/)
+**已支持：** [Codex](https://github.com/openai/codex) · [Claude Code](https://github.com/anthropics/claude-code) · [Kimi CLI](https://github.com/MoonshotAI/kimi-cli)
 
 ---
 

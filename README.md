@@ -9,7 +9,7 @@
 
 When your AI coding agent stops responding — task complete, waiting for input, or session ended — CodePing delivers a sleek native macOS popup right on your active monitor. Pair it with [Bark](https://github.com/Finb/Bark) and the same alert lands on your iPhone instantly.
 
-**Supported agents:** Codex · [Claude Code](https://claude.ai/code) · [Kimi CLI](https://platform.kimi.com/)
+**Supported agents:** [Codex](https://github.com/openai/codex) · [Claude Code](https://github.com/anthropics/claude-code) · [Kimi CLI](https://github.com/MoonshotAI/kimi-cli)
 
 ---
 
