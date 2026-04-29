@@ -253,5 +253,8 @@ if [ -n "$BARK_KEY" ] && [ "$BARK_KEY" != "your-bark-key-here" ]; then
   curl -fsS -m 10 \
     -H 'Content-Type: application/json' \
     -d "$bark_payload" \
-    https://api.day.app/push >/dev/null 2>&1 || true
+    https://api.day.app/push >/tmp/codeping-bark.log 2>&1 || {
+      echo "[CodePing] Bark push failed for ${CLI_NAME}. Key: ${BARK_KEY:0:8}..., cwd: ${cwd}" >&2
+      cat /tmp/codeping-bark.log >&2
+    }
 fi
